@@ -1,6 +1,9 @@
 import java.io.*;
-import java.util.*;
-import java.util.zip.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 public class Main {
@@ -16,6 +19,22 @@ public class Main {
 
         writeLog(dirLogText);
         writeLog(fileLogText); //записываем логи в текстовый файл
+
+        //TODO: тут конец задания №1 :)
+
+        GameProgress progress1 = new GameProgress(1400000, 50, 12, 105.5); //создали 3 объекта класса
+        GameProgress progress2 = new GameProgress(140, 50, 12, 105.5);
+        GameProgress progress3 = new GameProgress(3700000, 120000, 700000, 367.0);
+
+        saveGame("M://Games//savegames//save1.dat", progress1);
+        saveGame("M://Games//savegames/save2.dat", progress2);
+        saveGame("M://Games//savegames/save3.dat", progress3);  //сериализировали все объекты в папку savegame, каждый объект в свой файл
+
+        String zipName = "M:\\Games\\savegames\\save.zip";
+
+        zipFiles(zipName, "M:\\Games\\savegames\\save1.dat");
+        zipFiles(zipName, "M:\\Games\\savegames\\save2.dat");
+        zipFiles(zipName, "M:\\Games\\savegames\\save3.dat");
     }
 
     private static void addDir(List<File> dirs) {
@@ -38,24 +57,22 @@ public class Main {
     }
 
     private static String dirLog(List<File> dirs) {
-        StringBuilder sb = new StringBuilder("Логи" + "\n");
-        for (File dir : dirs) {
-            if (dir.mkdir())
-                sb.append("Каталог " + dir.getName() + " был создан" + "\n");
-        }
-        return sb.toString();
+        return dirs.stream()
+                .filter(File::mkdir)
+                .map(dir -> "Каталог " + dir.getName() + " был создан" + "\n")
+                .collect(Collectors.joining("", "Логи" + "\n", ""));
     }
 
     private static String fileLog(List<File> files) {
         StringBuilder sb = new StringBuilder();
-        for (File file : files) {
+        files.forEach(file -> {
             try {
                 if (file.createNewFile())
-                    sb.append("Файл " + file.getName() + " был создан" + "\n");
+                    sb.append("Файл ").append(file.getName()).append(" был создан").append("\n");
             } catch (IOException ex) {
-                sb.append(ex.getMessage() + "\n");
+                sb.append(ex.getMessage()).append("\n");
             }
-        }
+        });
         return sb.toString();
     }
 
@@ -69,4 +86,27 @@ public class Main {
     }
     //TODO: тут конец задания №1 :)
 
+    private static void saveGame(String fileName, GameProgress progresses) {
+        try (FileOutputStream fos = new FileOutputStream(fileName);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(progresses);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private static void zipFiles(String zipName, String filePathName) {
+        try (ZipOutputStream zout = new ZipOutputStream(new
+                FileOutputStream(zipName));
+             FileInputStream fis = new FileInputStream(filePathName)) {
+            ZipEntry entry = new ZipEntry(filePathName);
+            zout.putNextEntry(entry);
+            byte[] buffer = new byte[fis.available()];
+            fis.read(buffer);
+            zout.write(buffer);
+            zout.closeEntry();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
 }
